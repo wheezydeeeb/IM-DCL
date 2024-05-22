@@ -14,7 +14,7 @@ import configs
 
 from io_utils import model_dict, parse_args
 
-from datasets import ISIC_few_shot_da, EuroSAT_few_shot_da, CropDisease_few_shot_da, Chest_few_shot_da
+from datasets import ISIC_few_shot, EuroSAT_few_shot, CropDisease_few_shot, Chest_few_shot
 
 '''
 def tsne(k, name, epoch, features, labels):
@@ -397,22 +397,22 @@ if __name__=='__main__':
 
     if params.dtarget == 'ISIC':
         print ("Loading ISIC")
-        datamgr = ISIC_few_shot_da.SetDataManager(image_size, n_eposide=iter_num, **few_shot_params)
+        datamgr = ISIC_few_shot.SetDataManager(image_size, n_eposide=iter_num, **few_shot_params)
         novel_loader = datamgr.get_data_loader(aug=True)
         name = "ISIC"
     elif params.dtarget == 'EuroSAT':
         print ("Loading EuroSAT")
-        datamgr = EuroSAT_few_shot_da.SetDataManager(image_size, n_eposide=iter_num, **few_shot_params)
+        datamgr = EuroSAT_few_shot.SetDataManager(image_size, n_eposide=iter_num, **few_shot_params)
         novel_loader = datamgr.get_data_loader(aug=True)
         name = "EuroSAT"
     elif params.dtarget == 'CropDisease':
         print ("Loading CropDisease")
-        datamgr = CropDisease_few_shot_da.SetDataManager(image_size, n_eposide=iter_num, **few_shot_params)
+        datamgr = CropDisease_few_shot.SetDataManager(image_size, n_eposide=iter_num, **few_shot_params)
         novel_loader = datamgr.get_data_loader(aug=True)
         name = "CropDisease"
     elif params.dtarget == 'ChestX':
         print ("Loading ChestX")
-        datamgr = Chest_few_shot_da.SetDataManager(image_size, n_eposide=iter_num, **few_shot_params)
+        datamgr = Chest_few_shot.SetDataManager(image_size, n_eposide=iter_num, **few_shot_params)
         novel_loader = datamgr.get_data_loader(aug=True)
         name = "ChestX"
 
