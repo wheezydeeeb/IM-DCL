@@ -28,7 +28,7 @@ class SimpleDataset:
         self.meta['image_names'] = []
         self.meta['image_labels'] = []
 
-        d = ImageFolder(AFE_path)
+        d = ImageFolder(FER2013_path)
 
         for i, (data, label) in enumerate(d):
             self.meta['image_names'].append(data)
@@ -48,12 +48,12 @@ class SetDataset:
     def __init__(self, batch_size, transform):
 
         self.sub_meta = {}
-        self.cl_list = range(64)
+        self.cl_list = range(7)
 
         for cl in self.cl_list:
             self.sub_meta[cl] = []
 
-        d = ImageFolder(AFE_path)
+        d = ImageFolder(FER2013_path)
 
         for i, (data, label) in enumerate(d):
             self.sub_meta[label].append(data)
@@ -155,7 +155,7 @@ class SimpleDataManager(DataManager):
         transform = self.trans_loader.get_composed_transform(aug)
         dataset = SimpleDataset(transform)
 
-        data_loader_params = dict(batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=2,
+        data_loader_params = dict(batch_size=self.batch_size, shuffle=True, num_workers=2,
                                   pin_memory=True)
         data_loader = torch.utils.data.DataLoader(dataset, **data_loader_params)
 
