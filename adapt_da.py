@@ -14,7 +14,7 @@ import configs
 
 from io_utils import model_dict, parse_args
 
-from datasets import ISIC_few_shot, EuroSAT_few_shot, CropDisease_few_shot, Chest_few_shot
+from datasets import ISIC_few_shot, EuroSAT_few_shot, CropDisease_few_shot, Chest_few_shot, FER2013_few_shot
 
 '''
 def tsne(k, name, epoch, features, labels):
@@ -415,6 +415,11 @@ if __name__=='__main__':
         datamgr = Chest_few_shot.SetDataManager(image_size, n_eposide=iter_num, **few_shot_params)
         novel_loader = datamgr.get_data_loader(aug=True)
         name = "ChestX"
+    elif params.dtarget == 'FER2013':
+        print ("Loading FER2013")
+        datamgr = FER2013_few_shot.SetDataManager(image_size, n_eposide=iter_num, **few_shot_params)
+        novel_loader = datamgr.get_data_loader(aug=True)
+        name = "FER2013"
 
     print (params.dtarget)
     print (freeze_backbone)
