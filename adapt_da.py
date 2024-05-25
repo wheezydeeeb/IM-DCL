@@ -96,21 +96,24 @@ def finetune(name, novel_loader, n_query=15, freeze_backbone=False, n_way=5, n_s
         pretrained_model = model_dict[params.model]()
 
         checkpoint_dir = '%s/%s_%s' % (save_dir, params.model, params.method)
-        if params.train_aug:
-            checkpoint_dir += '_aug'
-        modelfile = os.path.join(checkpoint_dir, '%s_%s_1200.tar' % (params.model, params.method))
+        # if params.train_aug:
+        checkpoint_dir += '_aug'
+        modelfile = os.path.join(checkpoint_dir, 'resnet18_afe-0.9286.pt') # % (params.model, params.method))
         tmp = torch.load(modelfile)
-        state = tmp['state']
 
-        state_keys = list(state.keys())
-        for _, key in enumerate(state_keys):
-            if "feature." in key:
-                newkey = key.replace("feature.","")  # an architecture model has attribute 'feature', load architecture feature to backbone by casting name from 'feature.trunk.xx' to 'trunk.xx'  
-                state[newkey] = state.pop(key)
-            else:
-                state.pop(key)
+        # print(tmp.keys())
+        # state = tmp['state']
+        # state = tmp.get('state')
 
-        pretrained_model.load_state_dict(state)
+        # state_keys = list(state.keys())
+        # for _, key in enumerate(state_keys):
+        #     if "feature." in key:
+        #         newkey = key.replace("feature.","")  # an architecture model has attribute 'feature', load architecture feature to backbone by casting name from 'feature.trunk.xx' to 'trunk.xx'  
+        #         state[newkey] = state.pop(key)
+        #     else:
+        #         state.pop(key)
+
+        # pretrained_model.load_state_dict(state)
         pretrained_model = nn.DataParallel(pretrained_model)
         ###############################################################################################
 
