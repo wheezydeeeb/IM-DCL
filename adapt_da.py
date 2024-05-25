@@ -392,7 +392,7 @@ if __name__=='__main__':
     params.method = 'ce'
 
     few_shot_params = dict(n_way=params.test_n_way, n_support=params.n_shot, n_query=15)
-    #few_shot_params = dict(n_way=7, n_support=params.n_shot, n_query=100)
+    # few_shot_params = dict(n_way=7, n_support=params.n_shot, n_query=100)
     freeze_backbone = params.freeze_backbone
 
     if params.dtarget == 'ISIC':

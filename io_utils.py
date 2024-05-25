@@ -1,8 +1,8 @@
 import argparse
 import backbone
 
-model_dict = dict(ResNet10 = backbone.ResNet10)
-#model_dict = dict(ResNet18 = backbone.ResNet18)
+# model_dict = dict(ResNet10 = backbone.ResNet10)
+model_dict = dict(ResNet18 = backbone.ResNet18)
 
 def parse_args(script):
     parser = argparse.ArgumentParser(description= 'few-shot script %s' %(script))
