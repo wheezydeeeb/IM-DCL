@@ -1,6 +1,6 @@
 save_dir                    = './mini_models'
 
-FER2013_path = "/content/ssd/FE/U"
+FER2013_path = "/kaggle/working/FE/U"
 
 ISIC_path = "/scratch/project_2004961/data/ISIC"
 ChestX_path = "/scratch/project_2004961/data/ChestX"

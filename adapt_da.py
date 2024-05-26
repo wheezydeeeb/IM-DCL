@@ -96,24 +96,24 @@ def finetune(name, novel_loader, n_query=15, freeze_backbone=False, n_way=5, n_s
         pretrained_model = model_dict[params.model]()
 
         checkpoint_dir = '%s/%s_%s' % (save_dir, params.model, params.method)
-        # if params.train_aug:
-        checkpoint_dir += '_aug'
-        modelfile = os.path.join(checkpoint_dir, 'resnet18_afe-0.9286.pt') # % (params.model, params.method))
+        if params.train_aug:
+            checkpoint_dir += '_aug'
+        modelfile = os.path.join(checkpoint_dir, 'ResNet18_bsr.tar') # % (params.model, params.method))
         tmp = torch.load(modelfile)
 
         # print(tmp.keys())
-        # state = tmp['state']
-        # state = tmp.get('state')
+        state = tmp['state']
+        state = tmp.get('state')
 
-        # state_keys = list(state.keys())
-        # for _, key in enumerate(state_keys):
-        #     if "feature." in key:
-        #         newkey = key.replace("feature.","")  # an architecture model has attribute 'feature', load architecture feature to backbone by casting name from 'feature.trunk.xx' to 'trunk.xx'  
-        #         state[newkey] = state.pop(key)
-        #     else:
-        #         state.pop(key)
+        state_keys = list(state.keys())
+        for _, key in enumerate(state_keys):
+            if "feature." in key:
+                newkey = key.replace("feature.","")  # an architecture model has attribute 'feature', load architecture feature to backbone by casting name from 'feature.trunk.xx' to 'trunk.xx'  
+                state[newkey] = state.pop(key)
+            else:
+                state.pop(key)
 
-        # pretrained_model.load_state_dict(state)
+        pretrained_model.load_state_dict(state)
         pretrained_model = nn.DataParallel(pretrained_model)
         ###############################################################################################
 
@@ -135,8 +135,8 @@ def finetune(name, novel_loader, n_query=15, freeze_backbone=False, n_way=5, n_s
             # x = x.unsqueeze(0).to('cuda')
             x_var = Variable(x)
             print(f"x_var shape: {x_var.shape}")
-            # x_var_i_tmp = x_var[:, :, :, :, :].contiguous().view(n_way * (n_support + 15), *x.size()[2:])
-            x_var_i_tmp = x_var[:, :, :, :].contiguous().view(n_way * (n_support + 15), *x.size()[2:])
+            x_var_i_tmp = x_var[:, :, :, :, :].contiguous().view(n_way * (n_support + 15), *x.size()[2:])
+            # x_var_i_tmp = x_var[:, :, :, :].contiguous().view(n_way * (n_support + 15), *x.size()[2:])
             x_all_i = x_var[:, :, :, :, :].contiguous().view(all_size, *x.size()[2:])
             
             y_a_i_tmp = Variable(torch.from_numpy(np.repeat(range(n_way), n_support))).to('cuda')
