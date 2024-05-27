@@ -213,7 +213,7 @@ def finetune(name, novel_loader, n_query=15, freeze_backbone=False, n_way=5, n_s
 
                 output = pretrained_model(z_batch)
                 print(output.shape)
-                output = output.permute(2, 3, 0, 1)
+                output = output.permute(0, 3, 2, 1)
                 print(output.size())
                 outputs = classifier(output)
                 print(y_batch.size())
