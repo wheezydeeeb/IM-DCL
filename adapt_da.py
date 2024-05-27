@@ -213,7 +213,7 @@ def finetune(name, novel_loader, n_query=15, freeze_backbone=False, n_way=5, n_s
 
                 output = pretrained_model(z_batch)
                 print(output.shape)
-                torch.permute(output, (2, 3, 0, 1))
+                output = output.permute(2, 3, 0, 1)
                 print(output.size())
                 outputs = classifier(output)
                 clf_loss = loss_fn(outputs, y_batch)
