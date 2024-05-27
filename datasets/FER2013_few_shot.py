@@ -1,5 +1,3 @@
-# This code is modified from https://github.com/facebookresearch/low-shot-shrink-hallucinate
-
 import torch
 from PIL import Image
 import numpy as np
@@ -25,7 +23,6 @@ class SimpleDataset:
         self.target_transform = target_transform
 
         self.meta = {}
-
         self.meta['image_names'] = []
         self.meta['image_labels'] = []
 
@@ -36,99 +33,129 @@ class SimpleDataset:
             self.meta['image_labels'].append(label)  
 
     def __getitem__(self, i):
-
         img = self.transform(self.meta['image_names'][i])
         target = self.target_transform(self.meta['image_labels'][i])
-
         return img, target
 
     def __len__(self):
         return len(self.meta['image_names'])
 
 class SetDataset:
-    def __init__(self, n_way, n_samples, transform):
-        self.n_way = n_way
-        self.n_samples = n_samples
-        self.transform = transform
+    def __init__(self, batch_size, transform):
+        self.sub_meta = {}
+        self.cl_list = range(7)
+
+        for cl in self.cl_list:
+            self.sub_meta[cl] = []
 
         d = ImageFolder(FER2013_path)
-        self.data = []
-        self.labels = []
-        for i, (data, label) in enumerate(d):
-            self.data.append(data)
-            self.labels.append(label)
 
-    def __getitem__(self, batch):
-        x = []
-        for way in batch:
-            way_data = []
-            for i in range(self.n_way):
-                way_data.append(self.transform(self.data[self.labels.index(i)][way]))
-            x.append(torch.stack(way_data))
-        x = torch.stack(x)
-        return x
+        for i, (data, label) in enumerate(d):
+            self.sub_meta[label].append(data)
+
+        for key, item in self.sub_meta.items():
+            print(len(self.sub_meta[key]))
+
+        self.sub_dataloader = [] 
+        sub_data_loader_params = dict(batch_size=batch_size,
+                                      shuffle=True,
+                                      num_workers=0, # use main thread only or may receive multiple batches
+                                      pin_memory=False)        
+        for cl in self.cl_list:
+            sub_dataset = SubDataset(self.sub_meta[cl], cl, transform=transform)
+            self.sub_dataloader.append(torch.utils.data.DataLoader(sub_dataset, **sub_data_loader_params))
+
+    def __getitem__(self, i):
+        # Concatenate all sub-datasets into a single batch with (n_way, n_support + n_query, 3, 224, 224)
+        support_tensors = []
+        query_tensors = []
+        support_labels = []
+        query_labels = []
+
+        for sub_loader in self.sub_dataloader:
+            sub_iter = iter(sub_loader)
+            support, support_label = next(sub_iter)
+            query, query_label = next(sub_iter)
+            support_tensors.append(support)
+            query_tensors.append(query)
+            support_labels.append(support_label)
+            query_labels.append(query_label)
+
+        x = torch.stack(support_tensors + query_tensors)
+        y = torch.cat(support_labels + query_labels)
+        return x, y
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.sub_dataloader)
+
+class SubDataset:
+    def __init__(self, sub_meta, cl, transform=transforms.ToTensor(), target_transform=identity):
+        self.sub_meta = sub_meta
+        self.cl = cl
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __getitem__(self, i):
+        img = self.transform(self.sub_meta[i])
+        target = self.target_transform(self.cl)
+        return img, target
+
+    def __len__(self):
+        return len(self.sub_meta)
 
 class EpisodicBatchSampler(object):
-    def __init__(self, n_classes, n_way, n_episodes, n_shot, n_query):
+    def __init__(self, n_classes, n_way, n_episodes):
         self.n_classes = n_classes
         self.n_way = n_way
         self.n_episodes = n_episodes
-        self.n_shot = n_shot
-        self.n_query = n_query
 
     def __len__(self):
         return self.n_episodes
 
     def __iter__(self):
         for i in range(self.n_episodes):
-            batch = torch.randperm(self.n_classes)[:self.n_way]
-            yield batch
+            yield torch.randperm(self.n_classes)[:self.n_way]
 
 class TransformLoader:
     def __init__(self, image_size, 
-                 normalize_param    = dict(mean= [0.485, 0.456, 0.406] , std=[0.229, 0.224, 0.225]),
-                 jitter_param       = dict(Brightness=0.4, Contrast=0.4, Color=0.4)):
+                 normalize_param=dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                 jitter_param=dict(Brightness=0.4, Contrast=0.4, Color=0.4)):
         self.image_size = image_size
         self.normalize_param = normalize_param
         self.jitter_param = jitter_param
-    
+
     def parse_transform(self, transform_type):
-        if transform_type=='ImageJitter':
-            method = add_transforms.ImageJitter( self.jitter_param )
+        if transform_type == 'ImageJitter':
+            method = add_transforms.ImageJitter(self.jitter_param)
             return method
         method = getattr(transforms, transform_type)
-        if transform_type=='RandomResizedCrop':
-            return method(self.image_size) 
-        elif transform_type=='CenterCrop':
-            return method(self.image_size) 
-        elif transform_type=='Resize':
+        if transform_type == 'RandomResizedCrop':
+            return method(self.image_size)
+        elif transform_type == 'CenterCrop':
+            return method(self.image_size)
+        elif transform_type == 'Resize':
             return method([int(self.image_size), int(self.image_size)])
-        elif transform_type=='Normalize':
-            return method(**self.normalize_param )
+        elif transform_type == 'Normalize':
+            return method(**self.normalize_param)
         else:
             return method()
 
-    def get_composed_transform(self, aug = False):
+    def get_composed_transform(self, aug=False):
         if aug:
             transform_list = ['RandomResizedCrop', 'ImageJitter', 'RandomHorizontalFlip', 'ToTensor', 'Normalize']
         else:
-            transform_list = ['Resize','CenterCrop', 'ToTensor', 'Normalize']
-            # transform_list = ['ToTensor', 'Normalize']
-
-        transform_funcs = [ self.parse_transform(x) for x in transform_list]
+            transform_list = ['Resize', 'CenterCrop', 'ToTensor', 'Normalize']
+        transform_funcs = [self.parse_transform(x) for x in transform_list]
         transform = transforms.Compose(transform_funcs)
         return transform
 
 class DataManager(object):
     @abstractmethod
     def get_data_loader(self, data_file, aug):
-        pass 
+        pass
 
 class SimpleDataManager(DataManager):
-    def __init__(self, image_size, batch_size):        
+    def __init__(self, image_size, batch_size):
         super(SimpleDataManager, self).__init__()
         self.batch_size = batch_size
         self.trans_loader = TransformLoader(image_size)
@@ -140,25 +167,23 @@ class SimpleDataManager(DataManager):
         data_loader_params = dict(batch_size=self.batch_size, shuffle=True, num_workers=2,
                                   pin_memory=True)
         data_loader = torch.utils.data.DataLoader(dataset, **data_loader_params)
-
         return data_loader
 
 class SetDataManager(DataManager):
-    def __init__(self, image_size, n_way=5, n_support=5, n_query=16, n_eposide = 100):        
+    def __init__(self, image_size, n_way=5, n_support=5, n_query=16, n_eposide=100):
         super(SetDataManager, self).__init__()
         self.image_size = image_size
         self.n_way = n_way
-        self.n_support = n_support
-        self.n_query = n_query
+        self.batch_size = n_support + n_query
         self.n_eposide = n_eposide
 
         self.trans_loader = TransformLoader(image_size)
 
     def get_data_loader(self, aug):
         transform = self.trans_loader.get_composed_transform(aug)
-        dataset = SetDataset(self.n_way, self.n_support + self.n_query, transform)
-        sampler = EpisodicBatchSampler(len(dataset), self.n_way, self.n_eposide, self.n_support, self.n_query)  
-        data_loader_params = dict(batch_sampler = sampler,  num_workers = 2, pin_memory = True)       
+        dataset = SetDataset(self.batch_size, transform)
+        sampler = EpisodicBatchSampler(len(dataset), self.n_way, self.n_eposide)
+        data_loader_params = dict(batch_sampler=sampler, num_workers=2, pin_memory=True)
         data_loader = torch.utils.data.DataLoader(dataset, **data_loader_params)
         return data_loader
 
