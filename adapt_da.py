@@ -216,6 +216,7 @@ def finetune(name, novel_loader, n_query=15, freeze_backbone=False, n_way=5, n_s
                 output = output.permute(2, 3, 0, 1)
                 print(output.size())
                 outputs = classifier(output)
+                print(y_batch.size())
                 clf_loss = loss_fn(outputs, y_batch)
                 
                 
