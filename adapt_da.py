@@ -130,6 +130,7 @@ def finetune(name, novel_loader, n_query=15, freeze_backbone=False, n_way=5, n_s
         
         x_b_i = []
         for aug, (x, y) in enumerate(zip(x_all, y_all)):
+            print(aug)
             n_query = x.size(1) - n_support
             # x = x.cuda()
             x = x.unsqueeze(0).to('cuda')
