@@ -145,7 +145,7 @@ def finetune(name, novel_loader, n_query=15, freeze_backbone=False, n_way=5, n_s
             y_var_tmp = Variable(torch.from_numpy(np.repeat(range(n_way), (n_support+n_query)))).to('cuda')
             
             #y_var_tmp = Variable(torch.from_numpy(np.repeat(range(7), (n_support+n_query)))).to('cuda')
-            print(f"x_var shape: {x_var.shape}")
+            print(f"x_var shape: {x_var[:, n_support:, :, :, :].shape}")
             x_b_i.append(x_var[:, n_support:, :, :, :].contiguous().view(n_way * n_query, *x.size()[2:]))
             x_a_i_tmp = x_var[:, :n_support, :, :, :].contiguous().view(n_way * n_support, *x.size()[2:])
             if aug == 0:
