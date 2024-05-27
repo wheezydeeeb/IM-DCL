@@ -15,7 +15,7 @@ import sys
 sys.path.append("../")
 from configs import *
 
-identity = lambda x:x
+identity = lambda x: x
 
 class SimpleDataset:
     def __init__(self, transform, target_transform=identity):
@@ -31,7 +31,7 @@ class SimpleDataset:
 
         for i, (data, label) in enumerate(d):
             self.meta['image_names'].append(data)
-            self.meta['image_labels'].append(label)  
+            self.meta['image_labels'].append(label)
 
     def __getitem__(self, i):
         img = self.transform(self.meta['image_names'][i])
@@ -54,11 +54,11 @@ class SetDataset:
         for i, (data, label) in enumerate(d):
             self.sub_meta[label].append(data)
 
-        self.sub_dataloader = [] 
+        self.sub_dataloader = []
         sub_data_loader_params = dict(batch_size=batch_size,
                                       shuffle=True,
                                       num_workers=0,  # use main thread only or may receive multiple batches
-                                      pin_memory=False)
+                                      pin_memory=True)
         
         self.n_way = n_way
         self.n_support = n_support
@@ -89,7 +89,7 @@ class SetDataset:
             query_set.append(torch.cat(query_images, dim=0).unsqueeze(0))
 
         x = torch.cat(support_set + query_set, dim=1)
-        y = torch.tensor(selected_classes)
+        y = selected_classes.clone().detach()
 
         return x, y
 
@@ -195,7 +195,7 @@ class SetDataManager(DataManager):
         transform = self.trans_loader.get_composed_transform(aug)
         dataset = SetDataset(self.batch_size, transform, self.n_way, self.n_support, self.n_query)
         sampler = EpisodicBatchSampler(len(dataset), self.n_way, self.n_eposide)
-        data_loader_params = dict(batch_sampler=sampler, num_workers=2, pin_memory=True)
+        data_loader_params = dict(batch_sampler=sampler, num_workers=1, pin_memory=True)
         data_loader = torch.utils.data.DataLoader(dataset, **data_loader_params)
         return data_loader
 
