@@ -212,6 +212,7 @@ def finetune(name, novel_loader, n_query=15, freeze_backbone=False, n_way=5, n_s
                 #####################################
 
                 output = pretrained_model(z_batch)
+                print(output.shape)
                 outputs = classifier(output)
                 clf_loss = loss_fn(outputs, y_batch)
                 
