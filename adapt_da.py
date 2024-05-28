@@ -134,9 +134,9 @@ def finetune(name, novel_loader, n_query=15, freeze_backbone=False, n_way=5, n_s
             # n_query = x.size(1) - n_support
             n_query = 15
             print(n_query)
-            # x = x.cuda()
-            x = x.unsqueeze(0).to('cuda')
-            x = x.repeat(n_way, 1, 1, 1, 1)
+            x = x.cuda()
+            # x = x.unsqueeze(0).to('cuda')
+            # x = x.repeat(n_way, 1, 1, 1, 1)
             x_var = Variable(x)
             print(f"x_var shape: {x_var.shape}")
             x_var_i_tmp = x_var[:, :, :, :, :].contiguous().view(n_way * (n_support + 15), *x.size()[2:])
